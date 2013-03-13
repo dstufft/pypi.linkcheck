@@ -4,6 +4,7 @@ Collects all installable looking links from PyPI
 """
 import itertools
 import json
+import traceback
 import xmlrpclib
 
 import gevent
@@ -70,6 +71,8 @@ def worker(queue, results):
         item = queue.get()
         try:
             process_links(item, queue, results)
+        except Exception:
+            traceback.print_exc()
         finally:
             queue.task_done()
 
