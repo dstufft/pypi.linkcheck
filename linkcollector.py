@@ -40,16 +40,27 @@ def process_links(item, queue, results):
     print "Processing %s for urls (For %s)" % (url.encode("utf-8"), project.encode("utf-8"))
 
     resp = session.get(url)
+    resp.raise_for_status()
+
     html = lxml.html.document_fromstring(resp.content)
-    html.make_links_absolute(url)
 
     if spider:
         for link in itertools.chain(html.find_rel_links("download"), html.find_rel_links("homepage")):
+            try:
+                link.make_links_absolute(url)
+            except ValueError:
+                continue
+
             if not installable(project, link.attrib["href"]):
                 queue.put((project, link.attrib["href"], False, session))
 
     # Process all links in html for installable items
     for link in html.xpath("//a"):
+        try:
+            link.make_links_absolute(url)
+        except ValueError:
+            continue
+
         if installable(project, link.attrib["href"]):
             results.put((project, url, link.attrib["href"]))
 
