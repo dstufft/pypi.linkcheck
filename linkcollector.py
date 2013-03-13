@@ -52,7 +52,7 @@ def process_links(item, queue, results):
             except ValueError:
                 continue
 
-            if not installable(project, link.attrib["href"]):
+            if "href" in link.attrib and not installable(project, link.attrib["href"]):
                 queue.put((project, link.attrib["href"], False, session))
 
     # Process all links in html for installable items
@@ -62,7 +62,7 @@ def process_links(item, queue, results):
         except ValueError:
             continue
 
-        if installable(project, link.attrib["href"]):
+        if "href" in link.attrib and installable(project, link.attrib["href"]):
             results.put((project, url, link.attrib["href"]))
 
 
