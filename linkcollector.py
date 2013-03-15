@@ -5,11 +5,13 @@ Collects all installable looking links from PyPI
 import itertools
 import json
 import traceback
+import urlparse
 import xmlrpclib
 
 import gevent
 import gevent.queue
 import lxml.html
+import redis
 import requests
 
 from pkg_resources import safe_name
@@ -19,14 +21,10 @@ from setuptools.package_index import distros_for_url
 WORKERS = 100
 
 
-def memoize(f):
-    cache = {}
+redis = redis.StrictRedis()
 
-    def memf(*x):
-        if x not in cache:
-            cache[x] = f(*x)
-        return cache[x]
-    return memf
+session = requests.session()
+session.verify = False
 
 
 def installable(project, url):
@@ -34,11 +32,11 @@ def installable(project, url):
     return bool([dist for dist in distros_for_url(url) if safe_name(dist.project_name).lower() == normalized])
 
 
-@memoize
-def process_links(item, queue, results):
-    project, url, spider, session = item
-
-    print "Processing %s for urls (For %s)" % (url.encode("utf-8"), project.encode("utf-8"))
+def process_links(project, url, spider):
+    if redis.sismember("seen", json.dumps([project, url, spider])):
+        print "Skipping %s; it has already been processed (For %s)" % (url.encode("utf-8"), project.encode("utf-8"))
+    else:
+        print "Processing %s for urls (For %s)" % (url.encode("utf-8"), project.encode("utf-8"))
 
     resp = session.get(url)
     resp.raise_for_status()
@@ -53,7 +51,9 @@ def process_links(item, queue, results):
                 continue
 
             if "href" in link.attrib and not installable(project, link.attrib["href"]):
-                queue.put((project, link.attrib["href"], False, session))
+                parsed = urlparse.urlparse(link.attrib["href"])
+                if parsed.scheme.lower() in ["http", "https"]:
+                    redis.rpush("queue", json.dumps([project, link.attrib["href"], False]))
 
     # Process all links in html for installable items
     for link in html.xpath("//a"):
@@ -63,58 +63,34 @@ def process_links(item, queue, results):
             continue
 
         if "href" in link.attrib and installable(project, link.attrib["href"]):
-            results.put((project, url, link.attrib["href"]))
+            redis.rpush("results", json.dumps([project, url, link.attrib["href"]]))
+
+    redis.sadd("seen", json.dumps([project, url, spider]))
 
 
-def worker(queue, results):
+def worker():
     while True:
-        item = queue.get()
+        item = redis.lpop("queue")
+
+        if item is None:
+            break
+
         try:
-            process_links(item, queue, results)
+            process_links(*json.loads(item))
         except Exception:
             traceback.print_exc()
-        finally:
-            queue.task_done()
 
 
 def main():
-    # Queues for storing tasks and results
-    queue = gevent.queue.JoinableQueue()
-    results = gevent.queue.Queue()
-
-    # Final urls container
-    urls = set()
-
-    # Spawn our workers
-    for _ in xrange(WORKERS):
-        gevent.spawn(worker, queue, results)
-
     # Grab a list of projects from PyPI
     projects = xmlrpclib.Server("http://pypi.python.org/pypi").list_packages()
 
-    # Session for processing links
-    session = requests.session()
-    session.verify = False
-
     # Add some urls to our queue
     for project in projects:
-        queue.put((project, "https://pypi.python.org/simple/" + project + "/", True, session))
+        redis.rpush("queue", json.dumps([project, "https://pypi.python.org/simple/" + project + "/", True]))
 
-    # Wait for our queue to empty
-    queue.join()
-
-    # Process our results
-    try:
-        while True:
-            urls.add(results.get(block=False))
-    except gevent.queue.Empty:
-        pass
-
-    print "Found a total of %s file links" % (len(urls),)
-
-    with open("links.json", "w") as links:
-        _urls = sorted([list(url) for url in urls])
-        json.dump(_urls, links, indent=2)
+    workers = [gevent.spawn(worker) for _ in xrange(WORKERS)]
+    gevent.joinall(workers)
 
 
 if __name__ == "__main__":
