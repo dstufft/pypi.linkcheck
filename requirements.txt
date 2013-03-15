@@ -1,3 +1,4 @@
 gevent
 lxml
+redis
 requests
