@@ -19,6 +19,12 @@ external = list(link for link in links if not is_internal(link[2]))
 internal_pairs = set((project, posixpath.basename(urlparse.urlparse(link).path)) for project, source, link in links if is_internal(link))
 external_only = [link for link in links if not (link[0], posixpath.basename(urlparse.urlparse(link[2]).path)) in internal_pairs]
 
+direct_external_links = [link for link in external if is_internal(link[1])]
+spidered_external_links = [link for link in external if not is_internal(link[1])]
+
+direct_external_only_links = [link for link in external_only if is_internal(link[1])]
+spidered_external_only_links = [link for link in external_only if not is_internal(link[1])]
+
 internal_filenames = set((link[0], posixpath.basename(urlparse.urlparse(link[2]).path)) for link in internal)
 external_filenames = set((link[0], posixpath.basename(urlparse.urlparse(link[2]).path)) for link in external)
 
@@ -28,6 +34,9 @@ only_external_only_projects = set(project for project in external_only_projects 
 
 domains = collections.Counter(urlparse.urlparse(link[2]).netloc for link in links)
 top_domains = domains.most_common(21)[1:]
+
+projects_external = collections.Counter(link[0] for link in external_only)
+top_externals = projects_external.most_common(20)
 
 
 with open("external_only_links.json", "w") as external_links_file:
@@ -44,10 +53,15 @@ with open("any_external_projects.json", "w") as projects_file:
 
 
 print " PyPI Link Checker Stats"
-print "=" * 60
+print "=" * 70
 print "  internal file links: %d" % len(internal)
 print "  external file links: %d" % len(external)
 print "  external only file links: %d" % len(external_only)
+print ""
+print "  direct external links: %d" % len(direct_external_links)
+print "  direct external only links: %d" % len(direct_external_only_links)
+print "  spidered external links: %d" % len(spidered_external_links)
+print "  spidered external only links: %d" % len(spidered_external_only_links)
 print ""
 print "  internal file names: %d" % len(internal_filenames)
 print "  external file names: %d" % len(external_filenames)
@@ -56,11 +70,14 @@ print "  projects with any external only links: %d" % len(external_only_projects
 print "  projects with only external only links: %d" % len(only_external_only_projects)
 print ""
 
-_padding = max(len(domain) for domain, _ in top_domains)
 print " Top External Link Domains"
-print "=" * 60
+print "=" * 70
 for domain, count in top_domains:
-    print "  %s: %d" % ((" " * (_padding - len(domain))) + domain, count)
+    print "  %s: %d" % (domain, count)
 
+print ""
 
-# import pdb; pdb.set_trace()
+print " Top Externally Hosted Projects (by number of external links)"
+print "=" * 70
+for project, count in top_externals:
+    print "  %s: %d" % (project, count)
