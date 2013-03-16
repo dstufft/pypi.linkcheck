@@ -54,6 +54,12 @@ with open("only_external_projects.json", "w") as projects_file:
 with open("any_external_projects.json", "w") as projects_file:
     json.dump(sorted(external_only_projects), projects_file, indent=4)
 
+with open("direct_only_external_projects.json", "w") as projects_file:
+    json.dump(sorted(direct_external_only_projects), projects_file, indent=4)
+
+with open("spidered_only_external_projects.json", "w") as projects_file:
+    json.dump(sorted(spidered_external_only_projects), projects_file, indent=4)
+
 
 print " PyPI Link Checker Stats"
 print "=" * 70
