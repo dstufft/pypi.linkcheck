@@ -76,3 +76,5 @@ Resources
 * [Projects with any files available only externally](https://github.com/dstufft/pypi.linkcheck/blob/master/any_external_projects.json)
 * [Projects with only files available only externally](https://github.com/dstufft/pypi.linkcheck/blob/master/only_external_projects.json)
 * [Files only availably externally broken down by project](https://raw.github.com/dstufft/pypi.linkcheck/master/external_only_links.json)
+* [Projects with linked files only availably by spidering](https://github.com/dstufft/pypi.linkcheck/blob/master/spidered_only_external_projects.json)
+* [Projects with linked files only available by direct external links](https://github.com/dstufft/pypi.linkcheck/blob/master/direct_only_external_projects.json)

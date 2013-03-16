@@ -22,8 +22,9 @@ external_only = [link for link in links if not (link[0], posixpath.basename(urlp
 direct_external_links = [link for link in external if is_internal(link[1])]
 spidered_external_links = [link for link in external if not is_internal(link[1])]
 
+direct_external_pairs = set((project, posixpath.basename(urlparse.urlparse(link).path)) for project, source, link in external_only if is_internal(source))
 direct_external_only_links = [link for link in external_only if is_internal(link[1])]
-spidered_external_only_links = [link for link in external_only if not is_internal(link[1])]
+spidered_external_only_links = [link for link in external_only if not is_internal(link[1]) and (link[0], posixpath.basename(urlparse.urlparse(link[2]).path)) not in direct_external_pairs]
 
 internal_filenames = set((link[0], posixpath.basename(urlparse.urlparse(link[2]).path)) for link in internal)
 external_filenames = set((link[0], posixpath.basename(urlparse.urlparse(link[2]).path)) for link in external)
