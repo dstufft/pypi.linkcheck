@@ -21,6 +21,8 @@ PyPI Link Checker Stats
 * external file names: 16024
 * projects with any external only links: 2581
 * projects with only external only links: 1332
+* projects with direct external only links: 1750
+* projects with spidered external only links: 1507
 
 Top External Link Domains
 ============================================================

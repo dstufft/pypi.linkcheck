@@ -32,6 +32,9 @@ internal_projects = set(project for project, _, _ in internal)
 external_only_projects = set(project for project, _, _ in external_only)
 only_external_only_projects = set(project for project in external_only_projects if project not in internal_projects)
 
+direct_external_only_projects = set(project for project, _, _ in direct_external_links)
+spidered_external_only_projects = set(project for project, _, _ in spidered_external_only_links)
+
 domains = collections.Counter(urlparse.urlparse(link[2]).netloc for link in links)
 top_domains = domains.most_common(21)[1:]
 
@@ -69,6 +72,8 @@ print ""
 print "  projects with any external only links: %d" % len(external_only_projects)
 print "  projects with only external only links: %d" % len(only_external_only_projects)
 print ""
+print "  projects with direct external only links: %d" % len(direct_external_only_projects)
+print "  projects with spidered external only links: %d" % len(spidered_external_only_projects)
 
 print " Top External Link Domains"
 print "=" * 70
