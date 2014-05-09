@@ -38,7 +38,7 @@ def process_links(project, url, spider):
     else:
         print "Processing %s for urls (For %s)" % (url.encode("utf-8"), project.encode("utf-8"))
 
-    resp = session.get(url)
+    resp = session.get(url, timeout=15)
     resp.raise_for_status()
 
     html = lxml.html.document_fromstring(resp.content)
